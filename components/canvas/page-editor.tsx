@@ -24,6 +24,7 @@ import { InkToolbar } from "./ink-toolbar";
 import { PageNavigator, type NavigatorPage } from "./page-navigator";
 import { PaperLayer, type PaperLayerHandle } from "./paper-layer";
 import { useAutosave } from "@/lib/canvas/use-autosave";
+import { useStudySession } from "@/lib/canvas/use-study-session";
 import { SaveStatusIndicator } from "./save-status";
 
 /**
@@ -113,6 +114,13 @@ export function PageEditor({
   });
 
   const { markDirty, flush, restoreDraft } = autosave;
+
+  // Counts time on this page toward the user's study stats.
+  useStudySession({
+    notebookId: page.notebookId,
+    pageId: page.id,
+    enabled: engineReady,
+  });
 
   /* ---------------------------------------------------------------------- */
   /*  Engine wiring                                                          */
