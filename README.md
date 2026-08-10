@@ -1,36 +1,106 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Notebook
 
-## Getting Started
+A digital study workspace. A shelf of notebooks, each holding as many pages as
+you want, each page an infinite canvas you can write on, draw on, diagram on and
+paste into — saved automatically, searchable, and tracked as study progress.
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```text
+Workspace → Notebooks → Pages → Canvas
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## What's here
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Shelf** — notebooks as physical objects (cover, spine, icon), with search,
+  sort, favourites, archive, duplicate and delete.
+- **Pages** — thumbnail grid, drag to reorder, rename inline, duplicate, delete.
+- **Canvas** — freehand ink (pencil / pen / marker / highlighter), shapes,
+  arrows that stay bound to the boxes they connect, on-canvas text, images,
+  eraser, multi-select, group, layer, lock, infinite pan and zoom, and the usual
+  keyboard shortcuts.
+- **Paper** — ruled, dotted, grid or plain, panning and zooming with the canvas
+  so a page reads as paper rather than a whiteboard.
+- **Autosave** — debounced, with a hard 30-second ceiling, an IndexedDB mirror
+  that survives crashes and offline stretches, conflict detection between tabs,
+  and a visible save state.
+- **Progress** — study streak, 12-month heatmap, hours studied, and a timeline
+  of what you actually worked on.
+- **Search** — Postgres full-text across notebook names, page titles and every
+  piece of text written on any canvas.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Stack
 
-## Learn More
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind v4 · Radix
+· Better Auth · Drizzle ORM · PostgreSQL 17 · Excalidraw as the canvas engine
 
-To learn more about Next.js, take a look at the following resources:
+## Setup
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Requires Node 20.9+ and a running PostgreSQL 17.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm install
 
-## Deploy on Vercel
+createdb learning_notebook
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+cp .env.example .env.local
+# then set DATABASE_URL, and generate a secret:
+#   openssl rand -base64 32   ->  BETTER_AUTH_SECRET
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+pnpm db:migrate
+pnpm dev
+```
+
+Open http://localhost:3000 and create an account.
+
+## Scripts
+
+| Command | What it does |
+| --- | --- |
+| `pnpm dev` | Dev server (Turbopack) |
+| `pnpm build` / `pnpm start` | Production build and serve |
+| `pnpm typecheck` | `tsc --noEmit` |
+| `pnpm lint` | ESLint, including the React Compiler rules |
+| `pnpm db:generate` | Generate a migration from schema changes |
+| `pnpm db:migrate` | Apply pending migrations |
+| `pnpm db:studio` | Drizzle Studio |
+| `pnpm test:e2e` | Browser smoke test — needs `pnpm dev` running |
+
+## Layout
+
+```text
+app/
+  (auth)/        sign in / sign up
+  (app)/         shelf, notebook, progress, search  — sidebar chrome
+  (editor)/      the canvas                          — full bleed, no chrome
+  api/           auth, autosave, assets, heartbeat, quick-find
+components/
+  canvas/        editor shell, engine adapter, paper layer, ink toolbar
+  ui/            Radix-based primitives
+lib/
+  canvas/        canvas types, autosave, local drafts, paper maths
+  db/            Drizzle schema and client
+  services/      the only layer that touches the database
+  actions/       server actions (thin wrappers over services)
+```
+
+Two rules keep this maintainable:
+
+1. **Only `lib/services/*` touches the database**, and every function there is
+   scoped by `userId` — authorization lives next to the data, not in a route
+   guard.
+2. **Only `components/canvas/canvas-engine.tsx` imports Excalidraw.** Everything
+   else talks to the `EngineHandle` interface, so the engine is replaceable.
+
+## Keyboard
+
+| Key | Action |
+| --- | --- |
+| `1` `2` `3` `4` | Pencil · Pen · Marker · Highlighter |
+| `V` `R` `O` `A` `T` | Select · Rectangle · Ellipse · Arrow · Text |
+| `⌘K` | Command palette |
+| `⌘\` | Toggle page navigator |
+| `⌥←` `⌥→` | Previous / next page |
+| `⌘S` | Force a save (it autosaves anyway) |
+| `⌘Z` / `⌘⇧Z` | Undo / redo |
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for the schema, the reasoning behind
+the canvas decision, and the known limitations.

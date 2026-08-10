@@ -12,6 +12,11 @@ import type {
 } from "@excalidraw/excalidraw/types";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
+// Required. The engine ships its own stylesheet; without it `.excalidraw` has
+// no height rule, the canvas is sized from a degenerate measurement, and the
+// engine's toolbar renders unstyled.
+import "@excalidraw/excalidraw/index.css";
+
 import type { InkPreset } from "@/lib/canvas/ink-presets";
 import { useLatestRef } from "@/lib/react-utils";
 import type {
@@ -269,7 +274,7 @@ export function CanvasEngine({
   );
 
   return (
-    <div ref={containerRef} className="size-full [&_.excalidraw]:!bg-transparent">
+    <div ref={containerRef} className="notebook-canvas size-full">
       <Excalidraw
         excalidrawAPI={handleApi}
         theme={theme}

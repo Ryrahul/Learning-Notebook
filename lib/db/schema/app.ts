@@ -82,8 +82,8 @@ export const workspace = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     name: text("name").notNull().default("My Study Space"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
@@ -122,9 +122,9 @@ export const notebook = pgTable(
     /** Denormalised counter; maintained transactionally by the page service. */
     pageCount: integer("page_count").notNull().default(0),
 
-    lastOpenedAt: timestamp("last_opened_at"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
+    lastOpenedAt: timestamp("last_opened_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
@@ -174,9 +174,9 @@ export const page = pgTable(
 
     isDeleted: boolean("is_deleted").notNull().default(false),
 
-    lastEditedAt: timestamp("last_edited_at").defaultNow().notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
+    lastEditedAt: timestamp("last_edited_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
@@ -226,7 +226,7 @@ export const pageDocument = pgTable("page_document", {
   version: integer("version").notNull().default(0),
   elementCount: integer("element_count").notNull().default(0),
 
-  updatedAt: timestamp("updated_at")
+  updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
@@ -248,7 +248,7 @@ export const pageRevision = pgTable(
     elements: jsonb("elements").$type<CanvasElement[]>().notNull(),
     appState: jsonb("app_state").$type<CanvasAppState>().notNull().default({}),
     label: text("label"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     index("page_revision_page_created_idx").on(
@@ -283,7 +283,7 @@ export const pageAsset = pgTable(
     byteSize: integer("byte_size").notNull(),
     bytes: bytea("bytes").notNull(),
     fileName: text("file_name"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [index("page_asset_page_idx").on(table.pageId)],
 );
@@ -310,7 +310,7 @@ export const activityEvent = pgTable(
       .$type<Record<string, unknown>>()
       .notNull()
       .default({}),
-    occurredAt: timestamp("occurred_at").defaultNow().notNull(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     index("activity_user_time_idx").on(table.userId, table.occurredAt.desc()),
@@ -341,8 +341,8 @@ export const studySession = pgTable(
       onDelete: "set null",
     }),
     pageId: uuid("page_id").references(() => page.id, { onDelete: "set null" }),
-    startedAt: timestamp("started_at").defaultNow().notNull(),
-    lastHeartbeatAt: timestamp("last_heartbeat_at").defaultNow().notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }).defaultNow().notNull(),
+    lastHeartbeatAt: timestamp("last_heartbeat_at", { withTimezone: true }).defaultNow().notNull(),
     durationSeconds: integer("duration_seconds").notNull().default(0),
   },
   (table) => [

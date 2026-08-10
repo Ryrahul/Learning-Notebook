@@ -322,7 +322,32 @@ refactor because of a decision above:
 
 ---
 
-## 9. Stated assumptions
+## 9. Corrections made during the build
+
+Three things found by testing rather than by reading, recorded because they
+changed the design:
+
+**`timestamptz`, not `timestamp`.** The schema originally used `timestamp`
+(without time zone). That silently records *whose clock wrote the row*: the
+local Postgres session ran `Asia/Kolkata` while the machine ran `Asia/Kathmandu`,
+so rows written by `defaultNow()` landed 15 minutes away from rows written with
+a JS `Date`. Every column is now `timestamptz`, which stores an instant.
+Measured drift afterwards: 11ms. Timeline order, streaks, heatmap buckets and
+session durations all depended on this.
+
+**The engine's stylesheet is not optional.** Without
+`@excalidraw/excalidraw/index.css` the engine's container has no height rule; it
+measured a degenerate box and sized its canvas to 33,554,432px. The canvas
+rendered but no pointer input landed on it.
+
+**Engine change events are not edits.** The engine emits `onChange` for
+selection, cursor movement, tool switches and its own mount. Treating those as
+edits pinned the status at "Unsaved" from page load and — worse — reset the
+debounce forever, so the quiet window never arrived and only the 30s ceiling
+ever saved. Autosave now fingerprints the scene and ignores events that carry
+no actual change.
+
+## 10. Stated assumptions
 
 - **Single-user local development.** `DATABASE_URL` points at local Postgres;
   email verification is off and password reset is stubbed (no mail provider
@@ -332,3 +357,12 @@ refactor because of a decision above:
 - **PDF attachments** are stored and linked, not rendered inline. Embedding a
   PDF renderer on the canvas is disproportionate to its value here; images and
   screenshots — the actual study use case — are fully first-class.
+- **Heatmap days are bucketed in the database session's timezone.** Correct for
+  a single local user; a hosted multi-region deployment should pass the
+  client's IANA zone and group with `AT TIME ZONE`.
+- **Pan/zoom is persisted with the next content save**, not on its own. Saving
+  on every pan would mean a write per frame; piggybacking means the viewport
+  you return to is the one from your last actual edit.
+- **Handwritten strokes are not searchable** — only typed text is indexed.
+  Stroke points are stored losslessly, so handwriting recognition can be added
+  later without a backfill.

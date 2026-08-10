@@ -92,7 +92,10 @@ export function useAutosave({
   const retryTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const attemptRef = React.useRef(0);
+  /** Fingerprint of the last *saved* scene. */
   const lastFingerprint = React.useRef<string | null>(null);
+  /** Fingerprint of the last scene we were notified about. */
+  const lastSeen = React.useRef<string | null>(null);
   const lastThumbnailAt = React.useRef(0);
   const conflictRef = React.useRef<ServerDocument | null>(null);
 
@@ -231,6 +234,7 @@ export function useAutosave({
 
         versionRef.current = payload.version;
         lastFingerprint.current = fingerprint;
+        lastSeen.current = fingerprint;
         dirtyRef.current = false;
         attemptRef.current = 0;
         savingRef.current = false;
@@ -290,6 +294,26 @@ export function useAutosave({
   const markDirty = React.useCallback(() => {
     if (pausedRef.current) return;
 
+    const engine = getEngine();
+    if (!engine) return;
+
+    // The engine emits `onChange` for plenty of things that aren't edits —
+    // cursor movement, selection, tool switches, its own mount. Acting on
+    // those would peg the status at "Unsaved" from the moment the page opens
+    // and, worse, would reset the debounce forever so the quiet window never
+    // arrives and only the 30s ceiling ever saved.
+    const fingerprint = documentFingerprint(engine.getSnapshot().elements);
+    if (fingerprint === lastSeen.current) return;
+    lastSeen.current = fingerprint;
+
+    // Edited back to exactly what the server already has (undo, for example).
+    if (fingerprint === lastFingerprint.current) {
+      dirtyRef.current = false;
+      clearTimers();
+      setStatus((current) => (current === "saving" ? current : "saved"));
+      return;
+    }
+
     dirtyRef.current = true;
     setStatus((current) =>
       current === "saving" || current === "error" ? current : "dirty",
@@ -326,7 +350,7 @@ export function useAutosave({
         if (dirtyRef.current) void performSave();
       }, CEILING_MS);
     }
-  }, [getEngine, pageId, performSave]);
+  }, [clearTimers, getEngine, pageId, performSave]);
 
   const flush = React.useCallback(async () => {
     if (!dirtyRef.current || pausedRef.current) return;
@@ -350,6 +374,7 @@ export function useAutosave({
     conflictRef.current = null;
     pausedRef.current = false;
     lastFingerprint.current = null;
+    lastSeen.current = null;
     await performSave();
   }, [performSave]);
 
@@ -364,6 +389,7 @@ export function useAutosave({
     pausedRef.current = false;
     dirtyRef.current = false;
     lastFingerprint.current = documentFingerprint(server.elements);
+    lastSeen.current = lastFingerprint.current;
     setStatus("saved");
     void clearDraft(pageId);
   }, [getEngine, pageId]);
@@ -386,9 +412,10 @@ export function useAutosave({
 
   const restoreDraft = React.useCallback(
     async (engine: EngineHandle) => {
-      lastFingerprint.current = documentFingerprint(
-        engine.getSnapshot().elements,
-      );
+      // The scene as loaded from the server is, by definition, already saved.
+      const initial = documentFingerprint(engine.getSnapshot().elements);
+      lastFingerprint.current = initial;
+      lastSeen.current = initial;
 
       const draft = await readDraft(pageId);
       if (!draftIsRecoverable(draft, initialVersion, initialUpdatedAt)) return;
@@ -403,6 +430,7 @@ export function useAutosave({
             engine.replaceScene(draft.elements, draft.appState);
             dirtyRef.current = true;
             lastFingerprint.current = null;
+            lastSeen.current = null;
             setStatus("dirty");
             void performSave();
           },
@@ -460,6 +488,7 @@ export function useAutosave({
     conflictRef.current = null;
     attemptRef.current = 0;
     lastFingerprint.current = null;
+    lastSeen.current = null;
     lastThumbnailAt.current = 0;
     toast.dismiss(`conflict-${pageId}`);
 

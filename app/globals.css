@@ -219,6 +219,26 @@
   }
 }
 
+@layer components {
+  /*
+   * Engine chrome we replace with our own.
+   *
+   * The engine's bottom-left cluster duplicates the zoom controls and
+   * undo/redo we render in the notebook chrome; showing both is clutter and
+   * makes the page read as "a whiteboard with our bar bolted on".
+   * Its canvas background is also forced transparent so our paper layer,
+   * which sits behind it, is what the user actually sees.
+   */
+  .notebook-canvas .excalidraw {
+    background: transparent !important;
+  }
+
+  .notebook-canvas .zoom-actions,
+  .notebook-canvas .undo-redo-buttons {
+    display: none !important;
+  }
+}
+
 @layer utilities {
   .animate-fade-in {
     animation: var(--animate-in-fade);
