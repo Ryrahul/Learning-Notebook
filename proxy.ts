@@ -44,10 +44,13 @@ export function proxy(request: NextRequest) {
 export const config = {
   /**
    * Without a matcher this runs on every asset request. Excluded: Next's
-   * internals, the auth endpoints themselves (they must stay reachable while
-   * signed out), and anything that looks like a static file.
+   * internals, static files, and **all of `/api`**.
+   *
+   * The API exclusion matters: redirecting an unauthenticated `fetch` to an
+   * HTML login page would surface to the client as a 200 full of markup.
+   * Route handlers do their own auth check and answer with a real 401.
    */
   matcher: [
-    "/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?)$).*)",
+    "/((?!api/|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?)$).*)",
   ],
 };
