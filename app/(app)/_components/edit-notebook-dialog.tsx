@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { Label } from "@/components/ui/primitives";
+import { useSyncedFrom } from "@/lib/react-utils";
 import {
   Dialog,
   DialogContent,
@@ -44,14 +45,13 @@ export function EditNotebookDialog({
   const [pending, setPending] = React.useState(false);
 
   // Re-seed from props each time it opens, so a cancelled edit is discarded.
-  React.useEffect(() => {
-    if (open) {
-      setTitle(notebook.title);
-      setDescription(notebook.description ?? "");
-      setIcon(notebook.icon);
-      setColor(notebook.color as NotebookColor);
-    }
-  }, [open, notebook]);
+  useSyncedFrom(open, (isOpen) => {
+    if (!isOpen) return;
+    setTitle(notebook.title);
+    setDescription(notebook.description ?? "");
+    setIcon(notebook.icon);
+    setColor(notebook.color as NotebookColor);
+  });
 
   const theme = coverTheme(color);
 

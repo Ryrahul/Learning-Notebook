@@ -1,7 +1,7 @@
 import { requireUser } from "@/lib/auth/session";
 import { getOrCreateWorkspace } from "@/lib/services/workspace";
 import { listNotebooks } from "@/lib/services/notebooks";
-import { AppSidebar } from "./_components/app-sidebar";
+import { AppShell } from "./_components/app-shell";
 import { CommandPalette } from "./_components/command-palette";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
@@ -12,8 +12,8 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   const notebooks = await listNotebooks(user.id, { sort: "recent", limit: 300 });
 
   return (
-    <div className="flex min-h-dvh">
-      <AppSidebar
+    <>
+      <AppShell
         user={user}
         notebooks={notebooks.map((n) => ({
           id: n.id,
@@ -23,9 +23,10 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           pageCount: n.pageCount,
           isFavorite: n.isFavorite,
         }))}
-      />
-      <div className="min-w-0 flex-1">{children}</div>
+      >
+        {children}
+      </AppShell>
       <CommandPalette />
-    </div>
+    </>
   );
 }

@@ -21,6 +21,7 @@ import {
 } from "@/lib/actions/notebooks";
 import { coverTheme } from "@/lib/notebook-theme";
 import { cn, formatRelativeTime, pluralize } from "@/lib/utils";
+import { useSyncedFrom } from "@/lib/react-utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,7 +63,7 @@ export function NotebookCard({ notebook }: { notebook: NotebookCardData }) {
   // Optimistic so the star fills the instant it's clicked, not after a round trip.
   const [favorite, setFavorite] = React.useState(notebook.isFavorite);
 
-  React.useEffect(() => setFavorite(notebook.isFavorite), [notebook.isFavorite]);
+  useSyncedFrom(notebook.isFavorite, setFavorite);
 
   async function toggleFavorite(event: React.MouseEvent) {
     event.preventDefault();

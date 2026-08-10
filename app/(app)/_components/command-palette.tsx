@@ -15,6 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Kbd } from "@/components/ui/primitives";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useSyncedFrom } from "@/lib/react-utils";
 import { NewNotebookDialog } from "./new-notebook-dialog";
 
 const OPEN_EVENT = "notebook:open-command-palette";
@@ -64,27 +65,24 @@ export function CommandPalette() {
     };
   }, []);
 
-  React.useEffect(() => {
-    if (!open) {
-      setQuery("");
-      setResults(EMPTY);
-    }
-  }, [open]);
+  useSyncedFrom(open, (isOpen) => {
+    if (isOpen) return;
+    setQuery("");
+    setResults(EMPTY);
+  });
 
   // Debounced type-ahead. The AbortController matters: without it a slow
   // early request can land after a fast later one and show stale results.
   React.useEffect(() => {
     const trimmed = query.trim();
-    if (!trimmed) {
-      setResults(EMPTY);
-      setLoading(false);
-      return;
-    }
+    // With no query there is nothing to fetch; `results` is read through
+    // `visibleResults` below, which already treats an empty query as empty.
+    if (!trimmed) return;
 
     const controller = new AbortController();
-    setLoading(true);
 
     const timer = setTimeout(async () => {
+      setLoading(true);
       try {
         const response = await fetch(
           `/api/quick-find?q=${encodeURIComponent(trimmed)}`,
@@ -110,9 +108,12 @@ export function CommandPalette() {
     router.push(href);
   }
 
-  const hasResults =
-    results.notebooks.length > 0 || results.pages.length > 0;
   const trimmed = query.trim();
+  // Derived rather than stored: clearing the box must not depend on an effect
+  // landing before the next paint.
+  const visibleResults = trimmed ? results : EMPTY;
+  const hasResults =
+    visibleResults.notebooks.length > 0 || visibleResults.pages.length > 0;
 
   return (
     <>
@@ -172,12 +173,12 @@ export function CommandPalette() {
                 </Command.Group>
               )}
 
-              {results.notebooks.length > 0 && (
+              {visibleResults.notebooks.length > 0 && (
                 <Command.Group
                   heading="Notebooks"
                   className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground"
                 >
-                  {results.notebooks.map((nb) => (
+                  {visibleResults.notebooks.map((nb) => (
                     <Item
                       key={nb.id}
                       value={`nb-${nb.id}`}
@@ -190,12 +191,12 @@ export function CommandPalette() {
                 </Command.Group>
               )}
 
-              {results.pages.length > 0 && (
+              {visibleResults.pages.length > 0 && (
                 <Command.Group
                   heading="Pages"
                   className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground"
                 >
-                  {results.pages.map((p) => (
+                  {visibleResults.pages.map((p) => (
                     <Item
                       key={p.id}
                       value={`page-${p.id}`}

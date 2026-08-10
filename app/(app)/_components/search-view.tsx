@@ -9,6 +9,7 @@ import { formatRelativeTime, pluralize } from "@/lib/utils";
 import { coverTheme } from "@/lib/notebook-theme";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { useSyncedFrom } from "@/lib/react-utils";
 
 interface NotebookHit {
   id: string;
@@ -41,7 +42,7 @@ export function SearchView({
   const pathname = usePathname();
   const [value, setValue] = React.useState(query);
 
-  React.useEffect(() => setValue(query), [query]);
+  useSyncedFrom(query, setValue);
 
   // Debounced so each keystroke doesn't run a full-text query.
   React.useEffect(() => {
@@ -71,7 +72,7 @@ export function SearchView({
   const total = notebooks.length + pages.length;
 
   return (
-    <div className="mx-auto max-w-3xl px-8 py-8">
+    <div className="mx-auto max-w-3xl px-4 py-6 sm:px-8 sm:py-8">
       <h1 className="mb-6 font-display text-4xl tracking-tight">Search</h1>
 
       <div className="relative mb-8">

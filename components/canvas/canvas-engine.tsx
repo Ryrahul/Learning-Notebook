@@ -13,6 +13,7 @@ import type {
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
 import type { InkPreset } from "@/lib/canvas/ink-presets";
+import { useLatestRef } from "@/lib/react-utils";
 import type {
   CanvasAppState,
   CanvasAsset,
@@ -85,9 +86,9 @@ export function CanvasEngine({
   const lastSelectionCount = React.useRef(-1);
 
   // Callbacks live in a ref so the imperative handle never goes stale without
-  // forcing the whole engine to remount.
-  const events = React.useRef({ onChange, onViewportChange, onSelectionChange });
-  events.current = { onChange, onViewportChange, onSelectionChange };
+  // forcing the whole engine to remount. Written in an effect rather than
+  // during render — the engine only invokes them after mount.
+  const events = useLatestRef({ onChange, onViewportChange, onSelectionChange });
 
   const buildHandle = React.useCallback(
     (api: ExcalidrawImperativeAPI): EngineHandle => ({

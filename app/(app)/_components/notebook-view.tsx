@@ -51,6 +51,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useSyncedFrom } from "@/lib/react-utils";
 import { EditNotebookDialog } from "./edit-notebook-dialog";
 
 interface PageItem {
@@ -104,7 +105,7 @@ export function NotebookView({
 
   // Local copy so drag-reorder repaints immediately; the server call follows.
   const [order, setOrder] = React.useState(pages);
-  React.useEffect(() => setOrder(pages), [pages]);
+  useSyncedFrom(pages, setOrder);
 
   const [dragId, setDragId] = React.useState<string | null>(null);
   const [dropIndex, setDropIndex] = React.useState<number | null>(null);
@@ -162,7 +163,7 @@ export function NotebookView({
   const reorderable = query.trim().length === 0;
 
   return (
-    <div className="mx-auto max-w-[1400px] px-8 py-8">
+    <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-8 sm:py-8">
       <Link
         href="/dashboard"
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -386,7 +387,7 @@ function PageCard({
   const [title, setTitle] = React.useState(page.title);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
 
-  React.useEffect(() => setTitle(page.title), [page.title]);
+  useSyncedFrom(page.title, setTitle);
 
   async function commitRename() {
     setRenaming(false);

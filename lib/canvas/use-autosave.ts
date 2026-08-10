@@ -12,6 +12,7 @@ import {
 import { documentFingerprint } from "@/lib/canvas/types";
 import type { EngineHandle } from "@/lib/canvas/engine/types";
 import type { CanvasAppState, CanvasElement } from "@/lib/canvas/types";
+import { useLatestRef, useSyncedFrom } from "@/lib/react-utils";
 
 /**
  * Autosave.
@@ -95,8 +96,14 @@ export function useAutosave({
   const lastThumbnailAt = React.useRef(0);
   const conflictRef = React.useRef<ServerDocument | null>(null);
 
-  const thumbnailBgRef = React.useRef(thumbnailBackground);
-  thumbnailBgRef.current = thumbnailBackground;
+  const thumbnailBgRef = useLatestRef(thumbnailBackground);
+
+  // `performSave` retries itself on failure. Routing that through a ref keeps
+  // the recursion out of the declaration, so the timer always calls the
+  // current closure rather than capturing the first one.
+  const performSaveRef = React.useRef<
+    ((options?: { keepalive?: boolean }) => Promise<boolean>) | null
+  >(null);
 
   const clearTimers = React.useCallback(() => {
     for (const timer of [quietTimer, ceilingTimer, retryTimer]) {
@@ -263,14 +270,18 @@ export function useAutosave({
           BACKOFF_BASE_MS * 2 ** (attemptRef.current - 1),
         );
         retryTimer.current = setTimeout(() => {
-          void performSave();
+          void performSaveRef.current?.();
         }, delay);
 
         return false;
       }
     },
-    [clearTimers, getEngine, pageId, uploadPendingAssets],
+    [clearTimers, getEngine, pageId, thumbnailBgRef, uploadPendingAssets],
   );
+
+  React.useEffect(() => {
+    performSaveRef.current = performSave;
+  }, [performSave]);
 
   /* ---------------------------------------------------------------------- */
   /*  Scheduling                                                             */
@@ -434,7 +445,13 @@ export function useAutosave({
     };
   }, [performSave]);
 
-  // Reset when navigating between pages within the editor.
+  // Navigating to another page in the editor reuses this hook instance, so
+  // everything page-scoped has to be re-seeded.
+  useSyncedFrom(pageId, () => {
+    setStatus("idle");
+    setSavedAt(initialUpdatedAt ? new Date(initialUpdatedAt) : null);
+  });
+
   React.useEffect(() => {
     versionRef.current = initialVersion;
     dirtyRef.current = false;
@@ -444,15 +461,13 @@ export function useAutosave({
     attemptRef.current = 0;
     lastFingerprint.current = null;
     lastThumbnailAt.current = 0;
-    setStatus("idle");
-    setSavedAt(initialUpdatedAt ? new Date(initialUpdatedAt) : null);
     toast.dismiss(`conflict-${pageId}`);
 
     return () => {
       clearTimers();
       if (draftTimer.current) clearTimeout(draftTimer.current);
     };
-  }, [pageId, initialVersion, initialUpdatedAt, clearTimers]);
+  }, [pageId, initialVersion, clearTimers]);
 
   return {
     status,

@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tooltip } from "@/components/ui/tooltip";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useSyncedFrom } from "@/lib/react-utils";
 
 export interface EditorTopbarProps {
   page: { id: string; title: string; notebookId: string };
@@ -72,7 +73,7 @@ export function EditorTopbar({
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
 
-  React.useEffect(() => setTitle(page.title), [page.title, page.id]);
+  useSyncedFrom(page.id, () => setTitle(page.title));
 
   /** Every exit from this page flushes first — no route change loses ink. */
   const leaveTo = React.useCallback(

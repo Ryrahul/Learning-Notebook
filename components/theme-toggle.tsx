@@ -6,16 +6,15 @@ import { Monitor, Moon, Sun } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useMounted } from "@/lib/react-utils";
 
 const ORDER = ["light", "dark", "system"] as const;
 
 export function ThemeToggle({ className }: { className?: string }) {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = React.useState(false);
-
   // Theme is unknown until hydration; render a stable placeholder so the
   // server and client markup agree.
-  React.useEffect(() => setMounted(true), []);
+  const mounted = useMounted();
 
   const current = (theme ?? "system") as (typeof ORDER)[number];
   const Icon = !mounted

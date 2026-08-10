@@ -24,10 +24,12 @@ export function useStudySession({
   pageId: string | null;
   enabled?: boolean;
 }) {
-  const lastInteractionRef = React.useRef(Date.now());
+  const lastInteractionRef = React.useRef(0);
 
   React.useEffect(() => {
     if (!enabled) return;
+    // Opening the page counts as interaction.
+    lastInteractionRef.current = Date.now();
 
     const noteInteraction = () => {
       lastInteractionRef.current = Date.now();

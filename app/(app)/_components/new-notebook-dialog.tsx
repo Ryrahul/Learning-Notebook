@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { Label } from "@/components/ui/primitives";
+import { useSyncedFrom } from "@/lib/react-utils";
 import {
   Dialog,
   DialogContent,
@@ -37,14 +38,13 @@ export function NewNotebookDialog({
   const [pending, setPending] = React.useState(false);
 
   // Reset when reopened so a cancelled draft doesn't linger.
-  React.useEffect(() => {
-    if (open) {
-      setTitle("");
-      setDescription("");
-      setIcon("📓");
-      setColor("indigo");
-    }
-  }, [open]);
+  useSyncedFrom(open, (isOpen) => {
+    if (!isOpen) return;
+    setTitle("");
+    setDescription("");
+    setIcon("📓");
+    setColor("indigo");
+  });
 
   const theme = coverTheme(color);
 

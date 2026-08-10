@@ -63,7 +63,7 @@ export function ActivityDashboard({
   const grouped = React.useMemo(() => groupByDay(timeline), [timeline]);
 
   return (
-    <div className="mx-auto max-w-5xl px-8 py-8">
+    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-8 sm:py-8">
       <header className="mb-8">
         <h1 className="font-display text-4xl tracking-tight">Study progress</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">

@@ -109,7 +109,7 @@ export function NotebookShelf({
   const greeting = getGreeting();
 
   return (
-    <div className="mx-auto max-w-[1400px] px-8 py-8">
+    <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-8 sm:py-8">
       <header className="mb-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
