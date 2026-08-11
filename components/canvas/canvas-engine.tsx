@@ -66,6 +66,8 @@ export interface CanvasEngineProps extends EngineEvents {
   initialAssets: CanvasAsset[];
   theme: "light" | "dark";
   gridVisible: boolean;
+  /** Read-only: the engine renders and pans/zooms but cannot be edited. */
+  viewMode?: boolean;
   /** Rendered inside the engine's own layout (top-right). */
   topRightUI?: React.ReactNode;
   onReady?: (handle: EngineHandle) => void;
@@ -77,6 +79,7 @@ export function CanvasEngine({
   initialAssets,
   theme,
   gridVisible,
+  viewMode = false,
   topRightUI,
   onChange,
   onViewportChange,
@@ -274,11 +277,15 @@ export function CanvasEngine({
   );
 
   return (
-    <div ref={containerRef} className="notebook-canvas size-full">
+    <div
+      ref={containerRef}
+      className={`notebook-canvas size-full${viewMode ? " notebook-canvas--readonly" : ""}`}
+    >
       <Excalidraw
         excalidrawAPI={handleApi}
         theme={theme}
         gridModeEnabled={gridVisible}
+        viewModeEnabled={viewMode}
         objectsSnapModeEnabled
         initialData={{
           elements: initialElements as unknown as ExcalidrawElement[],

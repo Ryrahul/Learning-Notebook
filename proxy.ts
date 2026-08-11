@@ -13,14 +13,29 @@ import { getSessionCookie } from "better-auth/cookies";
  */
 
 const AUTH_ROUTES = ["/login", "/signup"];
+
+/** Exact-match public paths. */
 const PUBLIC_ROUTES = ["/"];
+
+/**
+ * Prefixes readable without a session.
+ *
+ * `/share/*` is a shared notebook opened through a capability token. It must
+ * stay reachable while signed out — bouncing a recipient to the login page
+ * would defeat the entire feature. The token itself is the authorization, and
+ * it is re-checked against the database on every request by the sharing
+ * service; this list only decides who gets to reach the handler.
+ */
+const PUBLIC_PREFIXES = ["/share/"];
 
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const hasSessionCookie = Boolean(getSessionCookie(request));
 
   const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
-  const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
+  const isPublicRoute =
+    PUBLIC_ROUTES.includes(pathname) ||
+    PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
   // Signed in but sitting on login/signup — send them to their shelf.
   if (hasSessionCookie && isAuthRoute) {

@@ -16,6 +16,20 @@ const fail = (msg) => {
   process.exitCode = 1;
 };
 
+
+/**
+ * Wait for a client-side navigation. `page.waitForURL` defaults to waiting for
+ * a `load` event, which Next never fires on a soft navigation — making it pass
+ * or hang depending on timing. Polling the pathname is deterministic.
+ */
+async function waitForPath(page, pattern, timeout = 30000) {
+  await page.waitForFunction(
+    (source) => new RegExp(source).test(location.pathname),
+    pattern.source,
+    { timeout, polling: 100 },
+  );
+}
+
 const browser = await chromium.launch({ headless: true, channel: "chrome" });
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 const page = await context.newPage();
@@ -33,7 +47,7 @@ await page.fill("#name", "E2E Tester");
 await page.fill("#email", EMAIL);
 await page.fill("#password", PASSWORD);
 await page.click('button[type="submit"]');
-await page.waitForURL("**/dashboard", { timeout: 20000 });
+await waitForPath(page, /^\/dashboard$/, 40000);
 log("    landed on dashboard");
 
 // Wait rather than sampling: the route has a loading skeleton, so checking
@@ -51,7 +65,7 @@ log("\n[2] Create notebook");
 await page.getByRole("button", { name: "New notebook" }).first().click();
 await page.fill("#nb-title", "System Design");
 await page.getByRole("button", { name: "Create notebook" }).click();
-await page.waitForURL(/\/n\/[0-9a-f-]{36}$/, { timeout: 20000 });
+await waitForPath(page, /\/n\/[0-9a-f-]{36}$/);
 const notebookUrl = page.url();
 log(`    created -> ${notebookUrl.replace(BASE, "")}`);
 
@@ -61,7 +75,7 @@ log("    notebook opens with the no-pages empty state");
 // ----------------------------------------------------------- 3. create page
 log("\n[3] Create page");
 await page.getByRole("button", { name: /Create the first page/ }).click();
-await page.waitForURL(/\/n\/[0-9a-f-]{36}\/p\/[0-9a-f-]{36}$/, { timeout: 20000 });
+await waitForPath(page, /\/n\/[0-9a-f-]{36}\/p\/[0-9a-f-]{36}$/);
 const editorUrl = page.url();
 log(`    editor -> ${editorUrl.replace(BASE, "")}`);
 

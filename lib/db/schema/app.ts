@@ -51,6 +51,17 @@ export const NOTEBOOK_COLORS = [
 export type NotebookColor = (typeof NOTEBOOK_COLORS)[number];
 
 /**
+ * Who can read a notebook.
+ *
+ * `link` is "unlisted": anyone holding the share token can read it, nobody can
+ * write it, and it is never listed or indexed. Modelled as a column rather
+ * than a boolean so `workspace` and `password` can be added without a
+ * migration to the shape.
+ */
+export const NOTEBOOK_VISIBILITIES = ["private", "link"] as const;
+export type NotebookVisibility = (typeof NOTEBOOK_VISIBILITIES)[number];
+
+/**
  * Activity types are a TypeScript union rather than a Postgres enum on
  * purpose: new analytics events should not require a migration.
  */
@@ -115,6 +126,20 @@ export const notebook = pgTable(
 
     isFavorite: boolean("is_favorite").notNull().default(false),
     isArchived: boolean("is_archived").notNull().default(false),
+
+    visibility: text("visibility")
+      .$type<NotebookVisibility>()
+      .notNull()
+      .default("private"),
+    /**
+     * Capability token for the share link — deliberately NOT the notebook id.
+     *
+     * A separate token means the link can be revoked and rotated without
+     * touching the notebook's identity, and a leaked link never exposes an
+     * internal id. Cleared on revoke, so old links die immediately.
+     */
+    shareToken: text("share_token").unique(),
+    sharedAt: timestamp("shared_at", { withTimezone: true }),
 
     /** Fractional index — reordering rewrites one row, never the whole list. */
     sortIndex: text("sort_index").notNull(),

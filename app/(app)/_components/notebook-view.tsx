@@ -8,12 +8,14 @@ import {
   Clock,
   Copy,
   FileText,
+  Globe,
   GripVertical,
   MoreHorizontal,
   Pencil,
   Plus,
   Search,
   Settings2,
+  Share2,
   Star,
   Trash2,
   X,
@@ -53,6 +55,7 @@ import {
 import { Tooltip } from "@/components/ui/tooltip";
 import { useSyncedFrom } from "@/lib/react-utils";
 import { EditNotebookDialog } from "./edit-notebook-dialog";
+import { ShareDialog } from "./share-dialog";
 
 interface PageItem {
   id: string;
@@ -84,6 +87,8 @@ interface NotebookMeta {
   updatedAt: Date;
   createdAt: Date;
   pageCount: number;
+  visibility: "private" | "link";
+  shareToken: string | null;
 }
 
 export function NotebookView({
@@ -100,6 +105,7 @@ export function NotebookView({
 
   const [query, setQuery] = React.useState("");
   const [editing, setEditing] = React.useState(false);
+  const [sharing, setSharing] = React.useState(false);
   const [creating, setCreating] = React.useState(false);
   const [favorite, setFavorite] = React.useState(notebook.isFavorite);
 
@@ -195,6 +201,12 @@ export function NotebookView({
               {notebook.title}
             </h1>
             {notebook.isArchived && <Badge variant="outline">Archived</Badge>}
+            {notebook.visibility === "link" && (
+              <Badge variant="accent" className="gap-1">
+                <Globe />
+                Shared
+              </Badge>
+            )}
           </div>
 
           {notebook.description && (
@@ -214,10 +226,28 @@ export function NotebookView({
 
         <div className="flex items-center gap-2">
           <Tooltip label={favorite ? "Remove from favourites" : "Add to favourites"}>
-            <Button variant="outline" size="icon" onClick={toggleFavorite}>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleFavorite}
+              aria-label={
+                favorite ? "Remove from favourites" : "Add to favourites"
+              }
+              aria-pressed={favorite}
+            >
               <Star
                 className={cn(favorite && "fill-amber-400 text-amber-400")}
               />
+            </Button>
+          </Tooltip>
+          <Tooltip label="Share this notebook">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setSharing(true)}
+              aria-label="Share this notebook"
+            >
+              <Share2 />
             </Button>
           </Tooltip>
           <Tooltip label="Notebook settings">
@@ -225,6 +255,7 @@ export function NotebookView({
               variant="outline"
               size="icon"
               onClick={() => setEditing(true)}
+              aria-label="Notebook settings"
             >
               <Settings2 />
             </Button>
@@ -352,6 +383,15 @@ export function NotebookView({
         notebook={notebook}
         open={editing}
         onOpenChange={setEditing}
+      />
+
+      <ShareDialog
+        notebookId={notebook.id}
+        notebookTitle={notebook.title}
+        initialVisibility={notebook.visibility}
+        initialToken={notebook.shareToken}
+        open={sharing}
+        onOpenChange={setSharing}
       />
     </div>
   );
@@ -515,13 +555,16 @@ function PageCard({
                 aria-label="Page title"
               />
             ) : (
-              <button
-                onDoubleClick={() => setRenaming(true)}
-                className="block w-full truncate text-left text-sm font-medium"
-                title={`${page.title} — double-click to rename`}
+              // The title opens the page, like the thumbnail above it. Renaming
+              // lives in the ⋯ menu rather than behind a double-click, which
+              // nothing signposted and most people never discovered.
+              <Link
+                href={`/n/${page.notebookId}/p/${page.id}`}
+                className="block w-full truncate text-left text-sm font-medium hover:underline"
+                title={page.title}
               >
                 {page.title}
-              </button>
+              </Link>
             )}
             <p className="mt-0.5 truncate text-xs text-muted-foreground">
               {formatRelativeTime(page.lastEditedAt)}

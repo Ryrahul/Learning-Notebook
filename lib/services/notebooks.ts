@@ -25,9 +25,31 @@ import { recordActivity } from "./activity";
 
 export type NotebookSort = "recent" | "alphabetical" | "created" | "manual";
 
-export interface NotebookListItem extends Notebook {
-  livePageCount: number;
-}
+/**
+ * List rows are an explicit projection, not `Notebook`.
+ *
+ * Notably absent: `shareToken`. A share token is a capability — there is no
+ * reason to ship one to every card on the shelf, and deriving this type from
+ * the full row would mean any future secret-ish column leaks here by default.
+ */
+export type NotebookListItem = Pick<
+  Notebook,
+  | "id"
+  | "workspaceId"
+  | "ownerId"
+  | "title"
+  | "description"
+  | "icon"
+  | "color"
+  | "isFavorite"
+  | "isArchived"
+  | "visibility"
+  | "sortIndex"
+  | "pageCount"
+  | "lastOpenedAt"
+  | "createdAt"
+  | "updatedAt"
+> & { livePageCount: number };
 
 export interface ListNotebooksOptions {
   sort?: NotebookSort;
@@ -65,6 +87,7 @@ export async function listNotebooks(
       color: notebook.color,
       isFavorite: notebook.isFavorite,
       isArchived: notebook.isArchived,
+      visibility: notebook.visibility,
       sortIndex: notebook.sortIndex,
       pageCount: notebook.pageCount,
       lastOpenedAt: notebook.lastOpenedAt,

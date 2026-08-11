@@ -45,6 +45,8 @@ export default async function NotebookPage(
         updatedAt: notebook.updatedAt,
         createdAt: notebook.createdAt,
         pageCount: notebook.pageCount,
+        visibility: notebook.visibility,
+        shareToken: notebook.shareToken,
       }}
       pages={pages}
       timeline={timeline.map((entry) => ({

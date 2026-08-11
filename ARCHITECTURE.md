@@ -292,8 +292,8 @@ refactor because of a decision above:
 
 | Future feature | Seam that makes it cheap |
 | --- | --- |
-| Collaboration / sharing | `workspace` indirection + `version` concurrency + a `member` table |
-| Public pages | one `visibility` column on `page` |
+| Collaboration (multi-writer) | `workspace` indirection + `version` concurrency + a `member` table |
+| Per-page public links | the same token model as §7, keyed on `page` instead |
 | PNG/SVG/PDF export | engine's `exportToBlob`/`exportToSvg`, already behind our adapter |
 | Version history UI | `page_revision` rows already being written |
 | Templates | a page duplicated from a system-owned notebook |
@@ -304,6 +304,37 @@ refactor because of a decision above:
 | Analytics | all derived from `activity_event`; no new write paths |
 
 ---
+
+## 7b. Public sharing
+
+Implemented. A notebook can be made readable by anyone holding a link.
+
+**The link is a capability token, not the notebook id.** `notebook.share_token`
+is 192 bits of CSPRNG entropy, separate from the primary key. That separation
+is what makes the link *revocable*: turning sharing off clears the token, so a
+leaked URL dies immediately and cannot be resurrected by re-enabling sharing —
+re-enabling mints a new one. "Create a new link" rotates it deliberately.
+Reusing the UUID would have made every share permanent and would have leaked an
+internal identifier.
+
+**Reads are the only public path.** `lib/services/sharing.ts` is the sole
+module reachable without a session, and every query in it is keyed by the token
+*and* re-checks `visibility = 'link'` in the same statement — there is no
+cached capability to invalidate. A page is only served if it belongs to the
+notebook that token unlocks; without that join a valid token for one notebook
+could read any page id in the database.
+
+**Its return types are deliberately separate** from the owner-facing ones. A
+field added to `Notebook` later cannot silently start appearing on the public
+surface. For the same reason `NotebookListItem` is an explicit projection that
+omits `share_token` — there is no reason to ship capability tokens to every
+card on the shelf.
+
+There is no public write path at all: the autosave and asset endpoints require
+a session and are unaware sharing exists. Verified by
+`scripts/e2e-share.mjs`, which asserts a guest gets `401` from both.
+
+Share pages are `noindex, nofollow` — "unlisted" should mean unlisted.
 
 ## 8. Build order
 

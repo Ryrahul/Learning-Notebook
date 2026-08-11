@@ -237,6 +237,19 @@
   .notebook-canvas .undo-redo-buttons {
     display: none !important;
   }
+
+  /*
+   * Read-only share view: hide every authoring affordance the engine still
+   * renders in view mode, so a recipient sees a page rather than a disabled
+   * editor.
+   */
+  .notebook-canvas--readonly .App-menu,
+  .notebook-canvas--readonly .App-toolbar,
+  .notebook-canvas--readonly .layer-ui__wrapper__top-right,
+  .notebook-canvas--readonly .help-icon,
+  .notebook-canvas--readonly .welcome-screen-center {
+    display: none !important;
+  }
 }
 
 @layer utilities {

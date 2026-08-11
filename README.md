@@ -26,6 +26,9 @@ Workspace → Notebooks → Pages → Canvas
   of what you actually worked on.
 - **Search** — Postgres full-text across notebook names, page titles and every
   piece of text written on any canvas.
+- **Sharing** — publish a notebook as a read-only link anyone can open without
+  an account. The link is a revocable token, not the notebook id, so you can
+  rotate or kill it at any time.
 
 ## Stack
 
@@ -63,6 +66,7 @@ Open http://localhost:3000 and create an account.
 | `pnpm db:migrate` | Apply pending migrations |
 | `pnpm db:studio` | Drizzle Studio |
 | `pnpm test:e2e` | Browser smoke test — needs `pnpm dev` running |
+| `pnpm test:share` | Share-link + access-control test — needs `pnpm dev` running |
 
 ## Layout
 
@@ -71,6 +75,7 @@ app/
   (auth)/        sign in / sign up
   (app)/         shelf, notebook, progress, search  — sidebar chrome
   (editor)/      the canvas                          — full bleed, no chrome
+  (public)/      /share/[token] — read-only, no account needed
   api/           auth, autosave, assets, heartbeat, quick-find
 components/
   canvas/        editor shell, engine adapter, paper layer, ink toolbar
@@ -89,6 +94,21 @@ Two rules keep this maintainable:
    guard.
 2. **Only `components/canvas/canvas-engine.tsx` imports Excalidraw.** Everything
    else talks to the `EngineHandle` interface, so the engine is replaceable.
+3. **`lib/services/sharing.ts` is the only module reachable without a session.**
+   Every query in it is keyed by the share token and re-checks visibility, and
+   its return types are separate from the owner-facing ones so a new private
+   field cannot leak into the public surface by default.
+
+## Sharing a notebook
+
+Open a notebook → **Share** → toggle *Anyone with the link*. Copy the link and
+send it; the recipient needs no account and gets a read-only view of every page,
+including the canvases.
+
+- **Revoke** by toggling sharing off — the link 404s immediately.
+- **Rotate** with *Create a new link* — the previous link dies at once.
+- Shared pages are `noindex`, and the link contains a random token rather than
+  the notebook's id, so it is never guessable or enumerable.
 
 ## Keyboard
 
