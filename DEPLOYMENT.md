@@ -39,6 +39,12 @@ On the server:
 
 ---
 
+## Current state
+
+The production host is provisioned and serving at **http://74.225.251.245**.
+CI secrets are set, and the pipeline has been exercised end to end. What is
+left is a domain — until then Caddy serves plain HTTP (see the note below).
+
 ## One-time: provision the server
 
 ```bash
@@ -80,6 +86,9 @@ ssh-keyscan -t ed25519 YOUR_HOST
 ```
 
 ### GitHub secrets — Settings → Secrets and variables → Actions
+
+> Already configured for this repository. Re-do this only when rotating the key
+> or moving hosts.
 
 | Secret | Value |
 | --- | --- |
