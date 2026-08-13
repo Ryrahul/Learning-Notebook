@@ -16,11 +16,12 @@ import {
   X,
 } from "lucide-react";
 
-import { cn, formatDuration, formatRelativeTime, pluralize } from "@/lib/utils";
+import { cn, formatDuration, pluralize } from "@/lib/utils";
 import { coverTheme } from "@/lib/notebook-theme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/primitives";
+import { RelativeTime } from "@/components/relative-time";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -281,7 +282,7 @@ function RecentPageCard({ page }: { page: RecentPage }) {
       <p className="truncate px-1 text-sm font-medium">{page.title}</p>
       <p className="mt-0.5 truncate px-1 text-xs text-muted-foreground">
         {page.notebookIcon} {page.notebookTitle} ·{" "}
-        {formatRelativeTime(page.lastEditedAt)}
+        <RelativeTime date={page.lastEditedAt} />
       </p>
     </Link>
   );

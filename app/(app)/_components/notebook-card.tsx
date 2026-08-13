@@ -20,8 +20,9 @@ import {
   updateNotebookAction,
 } from "@/lib/actions/notebooks";
 import { coverTheme } from "@/lib/notebook-theme";
-import { cn, formatRelativeTime, pluralize } from "@/lib/utils";
+import { cn, pluralize } from "@/lib/utils";
 import { useSyncedFrom } from "@/lib/react-utils";
+import { RelativeTime } from "@/components/relative-time";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -159,9 +160,11 @@ export function NotebookCard({ notebook }: { notebook: NotebookCardData }) {
           <div className="px-1 pt-2.5">
             <p className="truncate text-sm font-medium">{notebook.title}</p>
             <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              {notebook.pageCount === 0
-                ? "Empty — open to add a page"
-                : `Edited ${formatRelativeTime(notebook.updatedAt)}`}
+              {notebook.pageCount === 0 ? (
+                "Empty — open to add a page"
+              ) : (
+                <RelativeTime date={notebook.updatedAt} prefix="Edited " />
+              )}
             </p>
           </div>
         </Link>

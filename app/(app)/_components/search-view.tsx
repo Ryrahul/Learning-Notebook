@@ -5,11 +5,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { FileText, Search, X } from "lucide-react";
 
-import { formatRelativeTime, pluralize } from "@/lib/utils";
 import { coverTheme } from "@/lib/notebook-theme";
-import { cn } from "@/lib/utils";
+import { cn, pluralize } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { useSyncedFrom } from "@/lib/react-utils";
+import { RelativeTime } from "@/components/relative-time";
 
 interface NotebookHit {
   id: string;
@@ -162,9 +162,10 @@ export function SearchView({
                         <span className="truncate font-medium">
                           {page.title}
                         </span>
-                        <span className="shrink-0 text-xs text-muted-foreground">
-                          {formatRelativeTime(page.lastEditedAt)}
-                        </span>
+                        <RelativeTime
+                          date={page.lastEditedAt}
+                          className="shrink-0 text-xs text-muted-foreground"
+                        />
                       </span>
                       {page.excerpt && (
                         // ts_headline returns <mark> around matches; the string
