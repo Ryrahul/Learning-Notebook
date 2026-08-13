@@ -16,11 +16,13 @@ import {
   X,
 } from "lucide-react";
 
-import { cn, formatDuration, formatRelativeTime, pluralize } from "@/lib/utils";
+import { cn, formatDuration, pluralize } from "@/lib/utils";
 import { coverTheme } from "@/lib/notebook-theme";
+import { useMounted } from "@/lib/react-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/primitives";
+import { RelativeTime } from "@/components/relative-time";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -106,7 +108,12 @@ export function NotebookShelf({
     return () => clearTimeout(timer);
   }, [search, query, setParam]);
 
-  const greeting = getGreeting();
+  // The greeting depends on the *viewer's* local hour, which the server cannot
+  // know: it renders in UTC while the reader may be hours away, so SSR and
+  // hydration disagree (React #418). useSyncExternalStore renders the neutral
+  // server snapshot during hydration and swaps to the local greeting after.
+  const mounted = useMounted();
+  const greeting = mounted ? getGreeting() : "Welcome back";
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-8 sm:py-8">
@@ -281,7 +288,7 @@ function RecentPageCard({ page }: { page: RecentPage }) {
       <p className="truncate px-1 text-sm font-medium">{page.title}</p>
       <p className="mt-0.5 truncate px-1 text-xs text-muted-foreground">
         {page.notebookIcon} {page.notebookTitle} ·{" "}
-        {formatRelativeTime(page.lastEditedAt)}
+        <RelativeTime date={page.lastEditedAt} />
       </p>
     </Link>
   );

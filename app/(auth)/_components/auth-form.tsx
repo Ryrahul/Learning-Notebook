@@ -62,16 +62,29 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
 
     setPending(true);
 
-    const result = isSignUp
-      ? await authClient.signUp.email({
-          name: (parsed.data as z.infer<typeof signUpSchema>).name,
-          email: parsed.data.email,
-          password: parsed.data.password,
-        })
-      : await authClient.signIn.email({
-          email: parsed.data.email,
-          password: parsed.data.password,
-        });
+    // A network failure rejects rather than returning `error`, and an
+    // unhandled rejection here left the form silently doing nothing — the
+    // user clicks Sign in and gets no feedback at all.
+    let result;
+    try {
+      result = isSignUp
+        ? await authClient.signUp.email({
+            name: (parsed.data as z.infer<typeof signUpSchema>).name,
+            email: parsed.data.email,
+            password: parsed.data.password,
+          })
+        : await authClient.signIn.email({
+            email: parsed.data.email,
+            password: parsed.data.password,
+          });
+    } catch (error) {
+      setPending(false);
+      console.error("[auth] request failed", error);
+      setFormError(
+        "Could not reach the server. Check your connection and try again.",
+      );
+      return;
+    }
 
     if (result.error) {
       setPending(false);

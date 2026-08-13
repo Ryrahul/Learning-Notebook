@@ -4,7 +4,8 @@ import * as React from "react";
 import { AlertTriangle, Check, CloudOff, Loader2, RefreshCw } from "lucide-react";
 
 import type { SaveStatus } from "@/lib/canvas/use-autosave";
-import { cn, formatRelativeTime } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { RelativeTime } from "@/components/relative-time";
 
 /**
  * Save status.
@@ -74,7 +75,7 @@ export function SaveStatusIndicator({
     return (
       <Pill className="text-success">
         <Check className="size-3.5" />
-        {savedAt ? `Saved ${formatRelativeTime(savedAt)}` : "Saved"}
+        {savedAt ? <RelativeTime date={savedAt} prefix="Saved " /> : "Saved"}
       </Pill>
     );
   }

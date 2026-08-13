@@ -38,10 +38,13 @@ interface Stats {
 const WEEKS = 53;
 
 export function ActivityDashboard({
+  todayKey,
   daily,
   stats,
   timeline,
 }: {
+  /** The server's current date (YYYY-MM-DD). See the note in activity/page. */
+  todayKey: string;
   daily: DayActivity[];
   stats: Stats;
   timeline: TimelineEntry[];
@@ -51,7 +54,7 @@ export function ActivityDashboard({
     [daily],
   );
 
-  const weeks = React.useMemo(() => buildCalendar(), []);
+  const weeks = React.useMemo(() => buildCalendar(todayKey), [todayKey]);
 
   // Scale intensity to the user's own best day — a fixed scale would make a
   // light week look empty and a heavy week look uniformly maxed out.
@@ -60,7 +63,10 @@ export function ActivityDashboard({
     [daily],
   );
 
-  const grouped = React.useMemo(() => groupByDay(timeline), [timeline]);
+  const grouped = React.useMemo(
+    () => groupByDay(timeline, todayKey),
+    [timeline, todayKey],
+  );
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-8 sm:py-8">
@@ -288,9 +294,11 @@ interface CalendarWeek {
  * Uses local dates throughout — bucketing by UTC would shift a late-night
  * study session into the wrong square for most of the world.
  */
-function buildCalendar(): CalendarWeek[] {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+function buildCalendar(todayKey: string): CalendarWeek[] {
+  // Derived from the server's date rather than `new Date()`: the server runs
+  // UTC and the viewer may be hours away, so computing "today" on both sides
+  // produced different calendars and a hydration mismatch.
+  const today = new Date(`${todayKey}T00:00:00`);
 
   // Walk back to the Monday of the current week, then back 52 more weeks.
   const start = new Date(today);
@@ -364,7 +372,7 @@ function describeDay(day: { date: string }, activity?: DayActivity) {
   return `${label} — ${parts.join(" · ")}`;
 }
 
-function groupByDay(entries: TimelineEntry[]) {
+function groupByDay(entries: TimelineEntry[], todayKey: string) {
   const groups = new Map<string, TimelineEntry[]>();
 
   for (const entry of entries) {
@@ -374,14 +382,13 @@ function groupByDay(entries: TimelineEntry[]) {
     else groups.set(key, [entry]);
   }
 
-  const today = toDateKey(new Date());
-  const yesterdayDate = new Date();
+  const yesterdayDate = new Date(`${todayKey}T00:00:00`);
   yesterdayDate.setDate(yesterdayDate.getDate() - 1);
   const yesterday = toDateKey(yesterdayDate);
 
   return [...groups.entries()].map(([key, dayEntries]) => ({
     label:
-      key === today
+      key === todayKey
         ? "Today"
         : key === yesterday
           ? "Yesterday"

@@ -31,7 +31,7 @@ import {
 } from "@/lib/actions/pages";
 import { updateNotebookAction } from "@/lib/actions/notebooks";
 import { coverTheme } from "@/lib/notebook-theme";
-import { cn, formatRelativeTime, pluralize } from "@/lib/utils";
+import { cn, pluralize } from "@/lib/utils";
 import type { ActivityType } from "@/lib/db/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +54,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useSyncedFrom } from "@/lib/react-utils";
+import { RelativeTime } from "@/components/relative-time";
 import { EditNotebookDialog } from "./edit-notebook-dialog";
 import { ShareDialog } from "./share-dialog";
 
@@ -218,9 +219,9 @@ export function NotebookView({
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
             <span>{pluralize(order.length, "page")}</span>
             <span aria-hidden>·</span>
-            <span>Edited {formatRelativeTime(notebook.updatedAt)}</span>
+            <RelativeTime date={notebook.updatedAt} prefix="Edited " />
             <span aria-hidden>·</span>
-            <span>Created {formatRelativeTime(notebook.createdAt)}</span>
+            <RelativeTime date={notebook.createdAt} prefix="Created " />
           </div>
         </div>
 
@@ -368,9 +369,10 @@ export function NotebookView({
                     <p className="truncate text-foreground/90">
                       {describeActivity(entry)}
                     </p>
-                    <p className="text-muted-foreground">
-                      {formatRelativeTime(entry.occurredAt)}
-                    </p>
+                    <RelativeTime
+                      date={entry.occurredAt}
+                      className="block text-muted-foreground"
+                    />
                   </div>
                 </li>
               ))}
@@ -566,9 +568,10 @@ function PageCard({
                 {page.title}
               </Link>
             )}
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              {formatRelativeTime(page.lastEditedAt)}
-            </p>
+            <RelativeTime
+              date={page.lastEditedAt}
+              className="mt-0.5 block truncate text-xs text-muted-foreground"
+            />
           </div>
 
           <DropdownMenu>

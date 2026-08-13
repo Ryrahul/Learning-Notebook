@@ -5,10 +5,11 @@ import { Eye, FileText, NotebookPen } from "lucide-react";
 
 import { getSharedNotebook } from "@/lib/services/sharing";
 import { coverTheme } from "@/lib/notebook-theme";
-import { cn, formatRelativeTime, pluralize } from "@/lib/utils";
+import { cn, pluralize } from "@/lib/utils";
 import { Badge } from "@/components/ui/primitives";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { RelativeTime } from "@/components/relative-time";
 
 /** Unlisted means unlisted — keep these out of search engines. */
 export const metadata: Metadata = {
@@ -76,7 +77,7 @@ export default async function SharedNotebookPage(
           )}
           <p className="mt-3 text-sm text-muted-foreground">
             {pluralize(shared.pages.length, "page")} · updated{" "}
-            {formatRelativeTime(shared.updatedAt)}
+            <RelativeTime date={shared.updatedAt} />
           </p>
         </div>
       </div>
