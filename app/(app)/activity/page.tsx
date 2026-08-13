@@ -31,6 +31,11 @@ export default async function ActivityPage() {
         id: entry.id,
         type: entry.type,
         occurredAt: entry.occurredAt,
+        // Bucketed here so the server and the browser group entries the same
+        // way. Deriving it on both sides put an entry at 20:30 UTC on
+        // different days either side of the date line and produced a different
+        // number of rows after hydration.
+        dayKey: toDateKey(entry.occurredAt),
         notebookId: entry.notebookId,
         pageId: entry.pageId,
         notebookTitle: entry.notebookTitle,

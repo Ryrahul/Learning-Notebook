@@ -19,6 +19,8 @@ interface TimelineEntry {
   id: string;
   type: ActivityType;
   occurredAt: Date;
+  /** Day bucket, computed server-side — see the note in activity/page. */
+  dayKey: string;
   notebookId: string | null;
   pageId: string | null;
   notebookTitle: string | null;
@@ -381,7 +383,7 @@ function groupByDay(entries: TimelineEntry[], todayKey: string) {
   const groups = new Map<string, TimelineEntry[]>();
 
   for (const entry of entries) {
-    const key = toDateKey(new Date(entry.occurredAt));
+    const key = entry.dayKey;
     const bucket = groups.get(key);
     if (bucket) bucket.push(entry);
     else groups.set(key, [entry]);
