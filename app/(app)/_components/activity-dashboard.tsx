@@ -7,6 +7,7 @@ import { CalendarDays, Clock, Flame, PenLine, Sparkles } from "lucide-react";
 import type { ActivityType } from "@/lib/db/schema";
 import { cn, formatDuration, pluralize, toDateKey } from "@/lib/utils";
 import { Tooltip } from "@/components/ui/tooltip";
+import { LocalTime } from "@/components/relative-time";
 
 interface DayActivity {
   date: string;
@@ -36,6 +37,14 @@ interface Stats {
 }
 
 const WEEKS = 53;
+
+/**
+ * Calendar labels are rendered on the server and hydrated on the client, whose
+ * locales differ. These derive from a fixed date key, so pinning the locale
+ * makes them identical on both sides rather than merely suppressing the
+ * mismatch.
+ */
+const CALENDAR_LOCALE = "en-US";
 
 export function ActivityDashboard({
   todayKey,
@@ -239,11 +248,6 @@ function StatCard({
 }
 
 function TimelineRow({ entry }: { entry: TimelineEntry }) {
-  const time = entry.occurredAt.toLocaleTimeString(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-
   const href = entry.pageId
     ? `/n/${entry.notebookId}/p/${entry.pageId}`
     : entry.notebookId
@@ -252,9 +256,10 @@ function TimelineRow({ entry }: { entry: TimelineEntry }) {
 
   const body = (
     <span className="flex items-baseline gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-surface-muted">
-      <span className="w-16 shrink-0 text-xs tabular-nums text-muted-foreground">
-        {time}
-      </span>
+      <LocalTime
+        date={entry.occurredAt}
+        className="w-16 shrink-0 text-xs tabular-nums text-muted-foreground"
+      />
       <span className="shrink-0 text-sm">{entry.notebookIcon ?? "•"}</span>
       <span className="min-w-0 flex-1 truncate text-sm">
         {ACTIVITY_VERBS[entry.type] ?? "Updated"}{" "}
@@ -320,7 +325,7 @@ function buildCalendar(todayKey: string): CalendarWeek[] {
         days.push({ date: toDateKey(cursor) });
         if (day === 0 && cursor.getMonth() !== lastMonth) {
           lastMonth = cursor.getMonth();
-          monthLabel = cursor.toLocaleDateString(undefined, { month: "short" });
+          monthLabel = cursor.toLocaleDateString(CALENDAR_LOCALE, { month: "short" });
         }
       }
       cursor.setDate(cursor.getDate() + 1);
@@ -357,7 +362,7 @@ function levelClass(level: number) {
 }
 
 function describeDay(day: { date: string }, activity?: DayActivity) {
-  const label = new Date(`${day.date}T00:00:00`).toLocaleDateString(undefined, {
+  const label = new Date(`${day.date}T00:00:00`).toLocaleDateString(CALENDAR_LOCALE, {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -392,7 +397,7 @@ function groupByDay(entries: TimelineEntry[], todayKey: string) {
         ? "Today"
         : key === yesterday
           ? "Yesterday"
-          : new Date(`${key}T00:00:00`).toLocaleDateString(undefined, {
+          : new Date(`${key}T00:00:00`).toLocaleDateString(CALENDAR_LOCALE, {
               weekday: "long",
               month: "long",
               day: "numeric",

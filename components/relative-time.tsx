@@ -41,3 +41,28 @@ export function RelativeTime({
     </span>
   );
 }
+
+/**
+ * A clock time in the viewer's own timezone.
+ *
+ * Unlike the calendar labels, this *should* differ between server and client:
+ * the reader wants "10:20 AM" where they are, not where the server is. The
+ * server renders UTC, so the text is marked as expected-to-differ and React
+ * settles on the local value after hydration.
+ */
+export function LocalTime({
+  date,
+  className,
+}: {
+  date: Date | string | number;
+  className?: string;
+}) {
+  return (
+    <span className={className} suppressHydrationWarning>
+      {new Date(date).toLocaleTimeString(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+      })}
+    </span>
+  );
+}
