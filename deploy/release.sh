@@ -33,7 +33,11 @@ fi
 
 # ------------------------------------------------------------------- unpack
 log "unpacking ${RELEASE_ID}"
-rm -rf "${RELEASE_DIR}"
+# Release trees are owned by the app user, so removal must run as that user —
+# the deploy user gets permission denied on a plain rm.
+remove_release() { sudo -u "${APP_USER}" rm -rf "$1"; }
+
+remove_release "${RELEASE_DIR}"
 mkdir -p "${RELEASE_DIR}"
 tar -xzf "${TARBALL}" -C "${RELEASE_DIR}"
 rm -f "${TARBALL}"
@@ -51,7 +55,7 @@ set -a
 source "${APP_ROOT}/shared/.env"
 set +a
 if ! (cd "${RELEASE_DIR}" && node migrate.mjs); then
-  rm -rf "${RELEASE_DIR}"
+  remove_release "${RELEASE_DIR}"
   fail "migrations failed — nothing was swapped, previous release still serving"
 fi
 
@@ -80,7 +84,7 @@ if [[ "${healthy}" -ne 1 ]]; then
     ln -sfn "${PREVIOUS}" "${APP_ROOT}/current.new"
     mv -Tf "${APP_ROOT}/current.new" "${APP_ROOT}/current"
     sudo systemctl restart "${APP_NAME}"
-    rm -rf "${RELEASE_DIR}"
+    remove_release "${RELEASE_DIR}"
     fail "rolled back — previous release restored"
   fi
   fail "no previous release to roll back to"
@@ -94,7 +98,7 @@ cd "${APP_ROOT}/releases"
 ls -1dt */ 2>/dev/null | tail -n "+$((KEEP_RELEASES + 1))" | while read -r old; do
   [[ "$(readlink -f "${old}")" == "$(readlink -f "${APP_ROOT}/current")" ]] && continue
   log "pruning old release ${old%/}"
-  rm -rf "${old}"
+  remove_release "${old}"
 done
 
 log "deployed ${RELEASE_ID}"
