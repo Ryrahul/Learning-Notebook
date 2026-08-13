@@ -137,8 +137,11 @@ jobs:
         run: |
           set -euo pipefail
           URL="${{ vars.PUBLIC_APP_URL || format('http://{0}', secrets.DEPLOY_HOST) }}"
+          # -L follows redirects: once a domain with TLS is configured the edge
+          # answers 308 on http://, which is correct behaviour and previously
+          # failed this check even though the release was healthy.
           for i in $(seq 1 10); do
-            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$URL/login" || true)"
+            code="$(curl -sL -o /dev/null -w '%{http_code}' --max-time 10 "$URL/login" || true)"
             if [ "$code" = "200" ]; then echo "public health check OK ($URL)"; exit 0; fi
             echo "attempt $i: got $code"; sleep 3
           done
