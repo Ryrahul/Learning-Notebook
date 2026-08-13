@@ -6,6 +6,7 @@ import {
   getStudyStats,
   getTimeline,
 } from "@/lib/services/activity";
+import { toDateKey } from "@/lib/utils";
 import { ActivityDashboard } from "../_components/activity-dashboard";
 
 export const metadata: Metadata = { title: "Study progress" };
@@ -21,6 +22,9 @@ export default async function ActivityPage() {
 
   return (
     <ActivityDashboard
+      // Anchored server-side so SSR and hydration agree, and so the calendar
+      // lines up with how getDailyActivity buckets rows.
+      todayKey={toDateKey(new Date())}
       daily={daily}
       stats={stats}
       timeline={timeline.map((entry) => ({
