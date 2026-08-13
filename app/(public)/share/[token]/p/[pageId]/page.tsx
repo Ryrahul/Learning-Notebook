@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { getSharedPage } from "@/lib/services/sharing";
+import { signupEnabled } from "@/lib/auth/signup-policy";
 import { SharedPageViewer } from "@/components/canvas/shared-page-viewer";
 
 export const metadata: Metadata = {
@@ -21,6 +22,7 @@ export default async function SharedCanvasPage(
   return (
     <SharedPageViewer
       token={token}
+      signupEnabled={signupEnabled}
       notebook={{
         title: shared.notebookTitle,
         icon: shared.notebookIcon,

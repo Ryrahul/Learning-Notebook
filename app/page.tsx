@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { getCurrentUser } from "@/lib/auth/session";
+import { signupEnabled } from "@/lib/auth/signup-policy";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -54,9 +55,11 @@ export default async function LandingPage() {
           <Button asChild variant="ghost" size="sm">
             <Link href="/login">Sign in</Link>
           </Button>
-          <Button asChild size="sm" variant="accent">
-            <Link href="/signup">Get started</Link>
-          </Button>
+          {signupEnabled && (
+            <Button asChild size="sm" variant="accent">
+              <Link href="/signup">Get started</Link>
+            </Button>
+          )}
         </div>
       </header>
 
@@ -76,15 +79,26 @@ export default async function LandingPage() {
             infinite canvas you can write on, draw on, and think on.
           </p>
           <div className="mt-9 flex items-center justify-center gap-3">
-            <Button asChild size="lg" variant="accent">
-              <Link href="/signup">
-                Start your first notebook
-                <ArrowRight />
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline">
-              <Link href="/login">I already have one</Link>
-            </Button>
+            {signupEnabled ? (
+              <>
+                <Button asChild size="lg" variant="accent">
+                  <Link href="/signup">
+                    Start your first notebook
+                    <ArrowRight />
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline">
+                  <Link href="/login">I already have one</Link>
+                </Button>
+              </>
+            ) : (
+              <Button asChild size="lg" variant="accent">
+                <Link href="/login">
+                  Sign in
+                  <ArrowRight />
+                </Link>
+              </Button>
+            )}
           </div>
         </section>
 

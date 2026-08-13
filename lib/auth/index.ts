@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 
 import { db, schema } from "@/lib/db";
+import { signupEnabled } from "./signup-policy";
 
 export const auth = betterAuth({
   appName: "Notebook",
@@ -26,6 +27,8 @@ export const auth = betterAuth({
     // config flips once one exists — see ARCHITECTURE.md §9.
     requireEmailVerification: false,
     autoSignIn: true,
+    // Closed deployments reject sign-up at the API, not just in the UI.
+    disableSignUp: !signupEnabled,
   },
 
   session: {
