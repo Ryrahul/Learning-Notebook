@@ -63,6 +63,7 @@ interface NavigatorPage {
  */
 export function SharedPageViewer({
   token,
+  signupEnabled,
   notebook,
   page,
   document: sharedDocument,
@@ -71,6 +72,8 @@ export function SharedPageViewer({
   pages,
 }: {
   token: string;
+  /** Passed from the server: signup policy is server-only state. */
+  signupEnabled: boolean;
   notebook: { title: string; icon: string; color: string };
   page: { id: string; title: string; paperStyle: PaperStyle };
   document: { elements: CanvasElement[]; appState: CanvasAppState };
@@ -204,12 +207,14 @@ export function SharedPageViewer({
 
           <ThemeToggle />
 
-          <Button asChild size="sm" variant="accent" className="hidden sm:flex">
-            <Link href="/signup">
-              <NotebookPen />
-              Make your own
-            </Link>
-          </Button>
+          {signupEnabled && (
+            <Button asChild size="sm" variant="accent" className="hidden sm:flex">
+              <Link href="/signup">
+                <NotebookPen />
+                Make your own
+              </Link>
+            </Button>
+          )}
         </div>
       </header>
 

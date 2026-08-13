@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Eye, FileText, NotebookPen } from "lucide-react";
 
 import { getSharedNotebook } from "@/lib/services/sharing";
+import { signupEnabled } from "@/lib/auth/signup-policy";
 import { coverTheme } from "@/lib/notebook-theme";
 import { cn, pluralize } from "@/lib/utils";
 import { Badge } from "@/components/ui/primitives";
@@ -39,9 +40,11 @@ export default async function SharedNotebookPage(
         </span>
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Button asChild variant="outline" size="sm">
-            <Link href="/signup">Make your own</Link>
-          </Button>
+          {signupEnabled && (
+            <Button asChild variant="outline" size="sm">
+              <Link href="/signup">Make your own</Link>
+            </Button>
+          )}
         </div>
       </header>
 

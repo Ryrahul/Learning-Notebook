@@ -29,7 +29,14 @@ const signUpSchema = z.object({
 
 type FieldErrors = Partial<Record<"name" | "email" | "password", string>>;
 
-export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
+export function AuthForm({
+  mode,
+  signupEnabled = true,
+}: {
+  mode: "sign-in" | "sign-up";
+  /** Passed from the server; hides the sign-up link on closed deployments. */
+  signupEnabled?: boolean;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isSignUp = mode === "sign-up";
@@ -168,15 +175,17 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         </Button>
       </form>
 
-      <p className="text-sm text-muted-foreground">
-        {isSignUp ? "Already have an account? " : "New here? "}
-        <Link
-          href={isSignUp ? "/login" : "/signup"}
-          className="font-medium text-accent underline-offset-4 hover:underline"
-        >
-          {isSignUp ? "Sign in" : "Create an account"}
-        </Link>
-      </p>
+      {(isSignUp || signupEnabled) && (
+        <p className="text-sm text-muted-foreground">
+          {isSignUp ? "Already have an account? " : "New here? "}
+          <Link
+            href={isSignUp ? "/login" : "/signup"}
+            className="font-medium text-accent underline-offset-4 hover:underline"
+          >
+            {isSignUp ? "Sign in" : "Create an account"}
+          </Link>
+        </p>
+      )}
     </div>
   );
 }
