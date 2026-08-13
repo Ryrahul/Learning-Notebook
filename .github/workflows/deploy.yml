@@ -1,0 +1,136 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# One deploy at a time. Two concurrent releases racing the `current` symlink is
+# the classic way to end up serving a half-swapped app.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  # Gate the deploy on the same checks that must pass locally. Cheap, and it
+  # means a broken build never reaches the server.
+  verify:
+    name: Typecheck, lint, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      # `next build` peaked at 1.77 GB locally — comfortably inside a GitHub
+      # runner, and the reason we build here rather than on a small VM.
+      - name: Build
+        run: pnpm build
+        env:
+          # Only needed to satisfy the module-level check in lib/db; no database
+          # is contacted during the build.
+          DATABASE_URL: postgresql://build:build@127.0.0.1:5432/build
+          BETTER_AUTH_SECRET: build-time-placeholder-not-used-at-runtime
+          NEXT_PUBLIC_APP_URL: ${{ vars.PUBLIC_APP_URL || 'http://localhost:3000' }}
+
+      # The standalone output keeps pnpm's symlinked node_modules and traces
+      # PLATFORM-SPECIFIC binaries, so it must be built on Linux (as here) and
+      # packed with tar, which preserves symlinks.
+      - name: Assemble release bundle
+        run: |
+          set -euo pipefail
+          STAGE="$(mktemp -d)"
+          tar -cf - -C .next/standalone . | tar -xf - -C "$STAGE"
+          mkdir -p "$STAGE/.next/static"
+          tar -cf - -C .next/static . | tar -xf - -C "$STAGE/.next/static"
+          [ -d public ] && cp -R public "$STAGE/public"
+
+          # drizzle-orm is bundled into the server chunks rather than traced
+          # out, so the migration runner needs its own copy. It is pure JS.
+          mkdir -p "$STAGE/node_modules"
+          tar -cf - -C node_modules -h drizzle-orm | tar -xf - -C "$STAGE/node_modules"
+          cp -R drizzle "$STAGE/drizzle"
+          cp scripts/migrate.mjs "$STAGE/migrate.mjs"
+
+          tar -czf release.tar.gz -C "$STAGE" .
+          echo "bundle: $(du -h release.tar.gz | cut -f1)"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release
+          path: release.tar.gz
+          retention-days: 7
+
+  deploy:
+    name: Deploy to production
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: release
+
+      - name: Set up SSH
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Pin the host key so a hijacked DNS/IP cannot capture the deploy.
+          echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Upload release
+        run: |
+          set -euo pipefail
+          RELEASE_ID="$(date -u +%Y%m%d%H%M%S)-${GITHUB_SHA::7}"
+          echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
+          scp -i ~/.ssh/deploy_key -o IdentitiesOnly=yes \
+            release.tar.gz \
+            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/tmp/release-$RELEASE_ID.tar.gz"
+          scp -i ~/.ssh/deploy_key -o IdentitiesOnly=yes \
+            deploy/release.sh \
+            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/tmp/release-$RELEASE_ID.sh"
+
+      # release.sh migrates, swaps atomically, health-checks, and rolls back to
+      # the previous release on failure — so a red step here means the old
+      # version is still serving.
+      - name: Release
+        run: |
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes \
+            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
+            "bash /tmp/release-${RELEASE_ID}.sh '${RELEASE_ID}' '/tmp/release-${RELEASE_ID}.tar.gz' && rm -f /tmp/release-${RELEASE_ID}.sh"
+
+      - name: Verify from the public edge
+        run: |
+          set -euo pipefail
+          URL="${{ vars.PUBLIC_APP_URL || format('http://{0}', secrets.DEPLOY_HOST) }}"
+          for i in $(seq 1 10); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$URL/login" || true)"
+            if [ "$code" = "200" ]; then echo "public health check OK ($URL)"; exit 0; fi
+            echo "attempt $i: got $code"; sleep 3
+          done
+          echo "public health check failed for $URL" >&2
+          exit 1

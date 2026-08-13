@@ -122,5 +122,12 @@ including the canvases.
 | `⌘S` | Force a save (it autosaves anyway) |
 | `⌘Z` / `⌘⇧Z` | Undo / redo |
 
+## Deploying
+
+Push to `main` and GitHub Actions builds, ships and releases it. A bare VM
+needs `sudo bash deploy/provision.sh` run once first — see
+[DEPLOYMENT.md](./DEPLOYMENT.md) for the server setup, the secrets CI needs,
+and how to roll back.
+
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for the schema, the reasoning behind
 the canvas decision, and the known limitations.
