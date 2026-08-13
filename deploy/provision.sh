@@ -144,7 +144,17 @@ PORT="${APP_PORT}"
 HOSTNAME="127.0.0.1"
 EOF
 else
-  log "Keeping existing ${ENV_FILE}"
+  log "Keeping existing ${ENV_FILE} — secrets preserved"
+  # Re-running with PUBLIC_HOST is how a deployment moves from a bare IP to a
+  # domain. Only the origin is rewritten; the generated secret and database
+  # password are left alone. Without this the app kept advertising the old
+  # origin and Better Auth rejected requests from the new one.
+  if [[ -n "${PUBLIC_HOST}" ]]; then
+    ORIGIN="https://${PUBLIC_HOST}"
+    log "Updating public origin to ${ORIGIN}"
+    sed -i -E "s#^BETTER_AUTH_URL=.*#BETTER_AUTH_URL=\"${ORIGIN}\"#" "${ENV_FILE}"
+    sed -i -E "s#^NEXT_PUBLIC_APP_URL=.*#NEXT_PUBLIC_APP_URL=\"${ORIGIN}\"#" "${ENV_FILE}"
+  fi
 fi
 chown "${APP_USER}:${APP_USER}" "${ENV_FILE}"
 chmod 640 "${ENV_FILE}"
@@ -235,6 +245,13 @@ sudo -u postgres pg_dump -Fc ${PG_DB} > "\${DIR}/${PG_DB}-\$(date +%F).dump"
 find "\${DIR}" -name '*.dump' -mtime +14 -delete
 EOF
 chmod +x /etc/cron.daily/${APP_NAME}-backup
+
+# An existing deployment needs a restart to pick up a changed origin; a fresh
+# box has no release yet, so there is nothing to restart.
+if [[ -L "${APP_ROOT}/current" ]]; then
+  log "Restarting ${APP_NAME} to apply configuration"
+  systemctl restart "${APP_NAME}"
+fi
 
 log "Provisioning complete"
 cat <<EOF

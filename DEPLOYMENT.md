@@ -61,6 +61,16 @@ user, database and role; writes `/srv/notebook/shared/.env` with a generated
 `BETTER_AUTH_SECRET` and database password; installs the systemd unit and a
 nightly backup job.
 
+### Moving from a bare IP to a domain
+
+Point an **A record** at the server (`notebook` → the host IP), wait for it to
+resolve, then re-run provisioning with the domain. Caddy switches to automatic
+HTTPS, the auth origin is rewritten in place — the generated secret and
+database password are preserved — and the service restarts to pick it up.
+
+No rebuild is needed: the auth client is same-origin, so the deployed artifact
+already works on any hostname.
+
 Idempotent — re-run it any time, e.g. once DNS points at the box:
 
 ```bash
