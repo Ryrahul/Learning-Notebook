@@ -3,13 +3,17 @@ name: Deploy
 on:
   push:
     branches: [main]
+  # Verify runs on PRs too, so a broken build is caught before review rather
+  # than at deploy time. The deploy job is gated to pushes on main.
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 # One deploy at a time. Two concurrent releases racing the `current` symlink is
 # the classic way to end up serving a half-swapped app.
 concurrency:
-  group: deploy-production
-  cancel-in-progress: false
+  group: deploy-${{ github.event_name == 'pull_request' && github.head_ref || 'production' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   NODE_VERSION: "22"
@@ -40,6 +44,9 @@ jobs:
 
       - name: Lint
         run: pnpm lint
+
+      - name: Guards
+        run: node guards/run.mjs
 
       # `next build` peaked at 1.77 GB locally — comfortably inside a GitHub
       # runner, and the reason we build here rather than on a small VM.
@@ -83,6 +90,8 @@ jobs:
   deploy:
     name: Deploy to production
     needs: verify
+    # Never deploy from a pull request — only merged/pushed main.
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment: production
     steps:

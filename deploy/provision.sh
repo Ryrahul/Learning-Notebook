@@ -77,14 +77,19 @@ DEPLOY_USER="${SUDO_USER:-devops}"
 usermod -aG "${APP_USER}" "${DEPLOY_USER}" 2>/dev/null || true
 chmod -R g+rwX "${APP_ROOT}"
 
+# sudo matches command paths literally, so use the resolved path: on Debian
+# /bin is a symlink to /usr/bin and a /bin/... rule never matches.
+SYSTEMCTL="$(command -v systemctl)"
 cat > /etc/sudoers.d/${APP_NAME}-deploy <<EOF
 # Let the deploy user manage only this service — no general root.
-${DEPLOY_USER} ALL=(root) NOPASSWD: /bin/systemctl restart ${APP_NAME}, \\
-  /bin/systemctl start ${APP_NAME}, /bin/systemctl stop ${APP_NAME}, \\
-  /bin/systemctl status ${APP_NAME}, /bin/systemctl is-active ${APP_NAME}, \\
-  /bin/systemctl reload caddy
+${DEPLOY_USER} ALL=(root) NOPASSWD: ${SYSTEMCTL} restart ${APP_NAME}, \\
+  ${SYSTEMCTL} start ${APP_NAME}, ${SYSTEMCTL} stop ${APP_NAME}, \\
+  ${SYSTEMCTL} status ${APP_NAME}, ${SYSTEMCTL} is-active ${APP_NAME}, \\
+  ${SYSTEMCTL} reload caddy
 ${DEPLOY_USER} ALL=(${APP_USER}) NOPASSWD: ALL
 EOF
+# Reject a malformed drop-in rather than breaking sudo for everyone.
+visudo -cf /etc/sudoers.d/${APP_NAME}-deploy >/dev/null
 chmod 440 /etc/sudoers.d/${APP_NAME}-deploy
 
 # ------------------------------------------------------------------ postgres
