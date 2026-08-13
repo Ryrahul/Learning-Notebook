@@ -41,9 +41,13 @@ On the server:
 
 ## Current state
 
-The production host is provisioned and serving at **http://74.225.251.245**.
-CI secrets are set, and the pipeline has been exercised end to end. What is
-left is a domain — until then Caddy serves plain HTTP (see the note below).
+The production host is provisioned and serving; CI secrets are set and the
+pipeline has been exercised end to end. What is left is a domain — until then
+Caddy serves plain HTTP (see the note below).
+
+The host address lives only in the `DEPLOY_HOST` repository secret. This
+repository is public, so deliberately nothing here names the server, and
+neither should future edits.
 
 ## One-time: provision the server
 
