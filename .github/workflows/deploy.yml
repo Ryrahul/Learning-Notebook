@@ -57,7 +57,8 @@ jobs:
           # is contacted during the build.
           DATABASE_URL: postgresql://build:build@127.0.0.1:5432/build
           BETTER_AUTH_SECRET: build-time-placeholder-not-used-at-runtime
-          NEXT_PUBLIC_APP_URL: ${{ vars.PUBLIC_APP_URL || 'http://localhost:3000' }}
+          # Deliberately no NEXT_PUBLIC_APP_URL: the auth client is same-origin,
+          # so the build carries no origin and the same artifact runs anywhere.
 
       # The standalone output keeps pnpm's symlinked node_modules and traces
       # PLATFORM-SPECIFIC binaries, so it must be built on Linux (as here) and
