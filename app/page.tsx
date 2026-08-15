@@ -13,6 +13,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { signupEnabled } from "@/lib/auth/signup-policy";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { DemoVideo } from "@/components/demo-video";
 
 const FEATURES = [
   {
@@ -105,6 +106,12 @@ export default async function LandingPage() {
               </>
             )}
           </div>
+        </section>
+
+        {/* The demo sits directly under the hero: it answers "what is this"
+            faster than the feature grid below can. */}
+        <section className="pb-20">
+          <DemoVideo />
         </section>
 
         <section className="grid gap-4 pb-24 sm:grid-cols-2">

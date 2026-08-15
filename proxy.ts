@@ -65,8 +65,12 @@ export const config = {
    * The API exclusion matters: redirecting an unauthenticated `fetch` to an
    * HTML login page would surface to the client as a 200 full of markup.
    * Route handlers do their own auth check and answer with a real 401.
+   *
+   * Media extensions are listed for the same reason images are: the landing
+   * page demo is served to signed-out visitors, and without `mp4` here the
+   * proxy answered the video request with a redirect to /login.
    */
   matcher: [
-    "/((?!api/|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?)$).*)",
+    "/((?!api/|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|woff2?|mp4|webm|mov)$).*)",
   ],
 };
