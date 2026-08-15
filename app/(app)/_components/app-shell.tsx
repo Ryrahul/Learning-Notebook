@@ -21,10 +21,14 @@ import { openCommandPalette } from "./command-palette";
 export function AppShell({
   user,
   notebooks,
+  isAdmin,
+  pendingRequests,
   children,
 }: {
   user: CurrentUser;
   notebooks: SidebarNotebook[];
+  isAdmin: boolean;
+  pendingRequests: number;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -51,7 +55,12 @@ export function AppShell({
   return (
     <div className="flex min-h-dvh">
       <div className="hidden lg:block">
-        <AppSidebar user={user} notebooks={notebooks} />
+        <AppSidebar
+          user={user}
+          notebooks={notebooks}
+          isAdmin={isAdmin}
+          pendingRequests={pendingRequests}
+        />
       </div>
 
       {drawerOpen && (
@@ -62,7 +71,12 @@ export function AppShell({
             aria-label="Close menu"
           />
           <div className="absolute inset-y-0 left-0 animate-rise-in">
-            <AppSidebar user={user} notebooks={notebooks} />
+            <AppSidebar
+              user={user}
+              notebooks={notebooks}
+              isAdmin={isAdmin}
+              pendingRequests={pendingRequests}
+            />
           </div>
         </div>
       )}

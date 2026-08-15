@@ -12,7 +12,7 @@ import { getSessionCookie } from "better-auth/cookies";
  * session against the database.
  */
 
-const AUTH_ROUTES = ["/login", "/signup"];
+const AUTH_ROUTES = ["/login", "/signup", "/request-access"];
 
 /** Exact-match public paths. */
 const PUBLIC_ROUTES = ["/"];
@@ -20,13 +20,14 @@ const PUBLIC_ROUTES = ["/"];
 /**
  * Prefixes readable without a session.
  *
- * `/share/*` is a shared notebook opened through a capability token. It must
- * stay reachable while signed out — bouncing a recipient to the login page
- * would defeat the entire feature. The token itself is the authorization, and
- * it is re-checked against the database on every request by the sharing
- * service; this list only decides who gets to reach the handler.
+ * `/share/*` is a shared notebook opened through a capability token, and
+ * `/invite/*` is how an approved person creates their account. Both must stay
+ * reachable while signed out — bouncing them to the login page would defeat
+ * the feature. In each case the token itself is the authorization and is
+ * re-checked against the database on every request; this list only decides
+ * who gets to reach the handler.
  */
-const PUBLIC_PREFIXES = ["/share/"];
+const PUBLIC_PREFIXES = ["/share/", "/invite/"];
 
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;

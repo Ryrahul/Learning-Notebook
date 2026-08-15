@@ -9,6 +9,7 @@ import {
   LogOut,
   NotebookPen,
   Plus,
+  Inbox,
   Search,
   Sparkles,
   Star,
@@ -53,9 +54,13 @@ const NAV = [
 export function AppSidebar({
   user,
   notebooks,
+  isAdmin = false,
+  pendingRequests = 0,
 }: {
   user: CurrentUser;
   notebooks: SidebarNotebook[];
+  isAdmin?: boolean;
+  pendingRequests?: number;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -162,6 +167,16 @@ export function AppSidebar({
             />
           );
         })}
+        {isAdmin && (
+          <NavLink
+            href="/admin/access"
+            icon={Inbox}
+            label="Access requests"
+            active={pathname.startsWith("/admin/access")}
+            collapsed={collapsed}
+            badge={pendingRequests}
+          />
+        )}
       </nav>
 
       <Separator className="my-4" />
@@ -259,18 +274,21 @@ function NavLink({
   label,
   active,
   collapsed,
+  badge = 0,
 }: {
   href: string;
   icon: React.ElementType;
   label: string;
   active: boolean;
   collapsed: boolean;
+  /** Unread count; rendered as a dot when the rail is collapsed. */
+  badge?: number;
 }) {
   const link = (
     <Link
       href={href}
       className={cn(
-        "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors",
+        "relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors",
         active
           ? "bg-surface font-medium text-foreground shadow-sm"
           : "text-muted-foreground hover:bg-surface/70 hover:text-foreground",
@@ -279,11 +297,19 @@ function NavLink({
     >
       <Icon className="size-4 shrink-0" />
       {!collapsed && label}
+      {badge > 0 &&
+        (collapsed ? (
+          <span className="absolute right-2 top-1.5 size-2 rounded-full bg-accent" />
+        ) : (
+          <span className="ml-auto grid min-w-5 place-items-center rounded-full bg-accent px-1.5 text-[11px] font-medium text-accent-foreground">
+            {badge}
+          </span>
+        ))}
     </Link>
   );
 
   return collapsed ? (
-    <Tooltip label={label} side="right">
+    <Tooltip label={badge > 0 ? `${label} (${badge})` : label} side="right">
       {link}
     </Tooltip>
   ) : (

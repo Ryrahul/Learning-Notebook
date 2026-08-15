@@ -15,6 +15,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -76,6 +77,62 @@ export type ActivityType =
   | "page.deleted"
   | "page.duplicated"
   | "image.added";
+
+export const ACCESS_REQUEST_STATUSES = [
+  "pending",
+  "approved",
+  "declined",
+] as const;
+export type AccessRequestStatus = (typeof ACCESS_REQUEST_STATUSES)[number];
+
+/* -------------------------------------------------------------------------- */
+/*  Access requests                                                            */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Someone asking to be let in, on a deployment with sign-ups closed.
+ *
+ * Approving mints an invite the owner passes on however they like. Only a
+ * SHA-256 hash of that invite is stored: it is a credential that creates an
+ * account, so a database dump must not be enough to redeem one. The raw token
+ * is shown to the owner once, at approval.
+ */
+export const accessRequest = pgTable(
+  "access_request",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    reason: text("reason"),
+
+    status: text("status")
+      .$type<AccessRequestStatus>()
+      .notNull()
+      .default("pending"),
+
+    /** SHA-256 of the invite token — never the token itself. */
+    inviteTokenHash: text("invite_token_hash"),
+    inviteExpiresAt: timestamp("invite_expires_at", { withTimezone: true }),
+    redeemedAt: timestamp("redeemed_at", { withTimezone: true }),
+
+    /** Kept for triage: who asked from where, roughly. */
+    userAgent: text("user_agent"),
+
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("access_request_status_created_idx").on(
+      table.status,
+      table.createdAt.desc(),
+    ),
+    // Redemption looks the row up by token hash.
+    uniqueIndex("access_request_token_idx").on(table.inviteTokenHash),
+    index("access_request_email_idx").on(table.email),
+  ],
+);
 
 /* -------------------------------------------------------------------------- */
 /*  Workspace                                                                  */
@@ -439,3 +496,4 @@ export type PageRevision = typeof pageRevision.$inferSelect;
 export type PageAsset = typeof pageAsset.$inferSelect;
 export type ActivityEvent = typeof activityEvent.$inferSelect;
 export type StudySession = typeof studySession.$inferSelect;
+export type AccessRequest = typeof accessRequest.$inferSelect;

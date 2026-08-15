@@ -55,11 +55,11 @@ export default async function LandingPage() {
           <Button asChild variant="ghost" size="sm">
             <Link href="/login">Sign in</Link>
           </Button>
-          {signupEnabled && (
-            <Button asChild size="sm" variant="accent">
-              <Link href="/signup">Get started</Link>
-            </Button>
-          )}
+          <Button asChild size="sm" variant="accent">
+            <Link href={signupEnabled ? "/signup" : "/request-access"}>
+              {signupEnabled ? "Get started" : "Request access"}
+            </Link>
+          </Button>
         </div>
       </header>
 
@@ -92,12 +92,17 @@ export default async function LandingPage() {
                 </Button>
               </>
             ) : (
-              <Button asChild size="lg" variant="accent">
-                <Link href="/login">
-                  Sign in
-                  <ArrowRight />
-                </Link>
-              </Button>
+              <>
+                <Button asChild size="lg" variant="accent">
+                  <Link href="/request-access">
+                    Request access
+                    <ArrowRight />
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline">
+                  <Link href="/login">I already have an account</Link>
+                </Button>
+              </>
             )}
           </div>
         </section>

@@ -207,14 +207,12 @@ export function SharedPageViewer({
 
           <ThemeToggle />
 
-          {signupEnabled && (
-            <Button asChild size="sm" variant="accent" className="hidden sm:flex">
-              <Link href="/signup">
-                <NotebookPen />
-                Make your own
-              </Link>
-            </Button>
-          )}
+          <Button asChild size="sm" variant="accent" className="hidden sm:flex">
+            <Link href={signupEnabled ? "/signup" : "/request-access"}>
+              <NotebookPen />
+              Make your own
+            </Link>
+          </Button>
         </div>
       </header>
 
