@@ -175,17 +175,19 @@ export function AuthForm({
         </Button>
       </form>
 
-      {(isSignUp || signupEnabled) && (
-        <p className="text-sm text-muted-foreground">
-          {isSignUp ? "Already have an account? " : "New here? "}
-          <Link
-            href={isSignUp ? "/login" : "/signup"}
-            className="font-medium text-accent underline-offset-4 hover:underline"
-          >
-            {isSignUp ? "Sign in" : "Create an account"}
-          </Link>
-        </p>
-      )}
+      <p className="text-sm text-muted-foreground">
+        {isSignUp ? "Already have an account? " : "New here? "}
+        <Link
+          href={isSignUp ? "/login" : signupEnabled ? "/signup" : "/request-access"}
+          className="font-medium text-accent underline-offset-4 hover:underline"
+        >
+          {isSignUp
+            ? "Sign in"
+            : signupEnabled
+              ? "Create an account"
+              : "Request access"}
+        </Link>
+      </p>
     </div>
   );
 }

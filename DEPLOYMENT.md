@@ -182,6 +182,30 @@ allows 22/80/443. The systemd unit runs as an unprivileged user under
 
 ---
 
+## Access requests
+
+Sign-ups are closed (`SIGNUP_ENABLED="false"`), so the only way in is:
+
+1. Someone fills in `/request-access`.
+2. It appears at `/admin/access` with a count badge in your sidebar.
+3. You approve, which mints a **single-use invite link, valid 14 days**. It is
+   copied to your clipboard and shown once — send it however you like.
+4. They open it, set a password, and land in their own workspace.
+
+Admins are configured by email, not by a database column, so the privilege
+cannot be granted by anything the app itself can write:
+
+```bash
+# /srv/notebook/shared/.env
+ADMIN_EMAILS="you@example.com"        # comma-separated
+```
+
+Unset means nobody is an admin — the surface fails closed. `/admin/access`
+returns 404 for everyone else, so its existence is not advertised.
+
+Only a SHA-256 hash of each invite is stored, so a database dump cannot be
+redeemed.
+
 ## Known gaps
 
 - **`page_revision` has no retention policy** and is the largest projected

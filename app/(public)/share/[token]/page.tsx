@@ -40,11 +40,11 @@ export default async function SharedNotebookPage(
         </span>
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          {signupEnabled && (
-            <Button asChild variant="outline" size="sm">
-              <Link href="/signup">Make your own</Link>
-            </Button>
-          )}
+          <Button asChild variant="outline" size="sm">
+            <Link href={signupEnabled ? "/signup" : "/request-access"}>
+              Make your own
+            </Link>
+          </Button>
         </div>
       </header>
 
